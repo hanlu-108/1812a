@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LazyMan</title>
+</head>
+
+<body>
+    <script>
+        function Person(name) {
+            return new Lazy(name);
+        }
+        class Lazy {
+            constructor(name) {
+                this.sleepFirstTime = 0;
+                //promise的数据是调用链中的所有Promise对象
+                this.promises = Promise.resolve().then(
+                    //因为是箭头函数，this就是指向 Lazy
+                    () => this.sleepFirstTime && this._sleep(this.sleepFirstTime)
+                ).then(() => {
+                    console.log(`哈喽！我是${name}!`);
+                });
+            }
+            //调用链：sleepFirst、eat、sleep、_sleep
+            sleepFirst(time) {
+                this.sleepFirstTime = time;
+                return this; //返回整个对象，就能实现链式调用
+            }
+            eat(food) {
+                this.promises = this.promises.then(() => {
+                    console.log(`我正在吃${food}~`);
+                });
+                return this; //返回整个对象，就能实现链式调用
+            }
+            sleep(time) {
+                this.promises = this.promises.then(() => this._sleep(time));
+                return this; //返回整个对象，就能实现链式调用
+            }
+            _sleep(time) {
+                return new Promise((next) => {
+                    //在调用链调用结束之后 会放到事件循环队列中
+                    setTimeout(() => {
+                        console.log(`稍等等${time}秒哦`);
+                        next();
+                    }, time * 1000);
+                });
+            }
+        }
+        console.log('要开始喽:');
+        // 执行结果是：首先等待3秒 然后打印this is tom 再打印正在吃香蕉 然后等待2S 再打印正在吃苹果 最后打印正在吃火腿
+        // 但是我不想吃上面这些
+        Person("张唱唱").eat('水蜜桃').sleepFirst(3).sleep(2).eat('火龙果').sleep(3).eat('哈密瓜');
+    </script>
+</body>
+
+</html>
